@@ -10,6 +10,10 @@ public class Communication {
 	private SoketLinker internal;
 	private SoketLinker external;
 	
+	private SoketLinker[] spectator;
+	public static boolean aceptSpectators = false;
+	public static int numberOfSpec = 3;
+	
 	private ServerSocket server;
 	
 	private boolean threadIsRunning = true;
@@ -62,6 +66,7 @@ public class Communication {
 		 th.setPriority(6);
 		 th.start();
 		 com = this;
+		 
 	}
 	/**
 	 * Connection and I/O Methods
@@ -69,18 +74,12 @@ public class Communication {
 	@SuppressWarnings("static-access")
 	private void runConnection(){
 		while (threadIsRunning) {
-			try {
-				sema.acquire();
-			} catch (InterruptedException e) {
-				debug.Debug.println(e.toString(), debug.Debug.ERROR);
-			}
 			boolean sleep = false;
 			try {
 				sleep = rcmtr();
 			} catch (Exception e) {
 				debug.Debug.printExeption(e);
 			}
-			sema.release();
 			if(sleep){
 				try {
 					Thread.currentThread().sleep(100);
@@ -118,7 +117,6 @@ public class Communication {
 			debug.Debug.println("* ERROR Communication01a: String.lenght is 0 [External]", debug.Debug.ERROR);
 		}
 		rover.RoverControle.rover.ssk.recivedExternalMsg();
-		
 		CommAction.handleExtern(s);
 		
 		if(delay > 2){
@@ -128,7 +126,6 @@ public class Communication {
 				debug.Debug.println(e.toString(), debug.Debug.ERROR);
 			}
 		}
-		
 		printExternal(s+"RESPONSE");
 	}
 	
@@ -137,16 +134,43 @@ public class Communication {
 	 * @param s Print the String/String Array to the given Connection
 	 */
 	public void printExternal(String s){
+		try {
+			sema.acquire();
+		} catch (InterruptedException e) {
+			debug.Debug.println(e.toString(), debug.Debug.ERROR);
+		}
 		if(external != null){
 			external.linkerWrite(s);
 		}
+		if(spectator != null){
+			for (int i = 0; i < spectator.length; i++) {
+				if(spectator[i]==null)continue;
+				spectator[i].linkerWrite(s);
+			}
+		}
+		sema.release();
 	}
+	
 	public void printExternal(String[] s){
+		try {
+			sema.acquire();
+		} catch (InterruptedException e) {
+			debug.Debug.println(e.toString(), debug.Debug.ERROR);
+		}
 		if(external != null){
 			for (int i = 0; i < s.length; i++) {
 				external.linkerWrite(s[i]);
 			}
 		}
+		if(spectator != null){
+			for (int i = 0; i < spectator.length; i++) {
+				if(spectator[i]==null)continue;
+				for (int j = 0; j < s.length; j++) {
+					spectator[i].linkerWrite(s[j]);
+				}
+			}
+		}
+		sema.release();
 	}
 	
 	/**
@@ -176,20 +200,39 @@ public class Communication {
 			public void run() {
 				if(sc != null){
 					SoketLinker sl = new SoketLinker(sc);
-					
+					debug.Debug.println("xyz");
 					setConnInfo(sl);
+					debug.Debug.println("yzab");
 					
+					if(sl.spectator){
+						if(aceptSpectators){
+							if(spectator == null)
+								return;
+							try {
+								sema.acquire();
+							} catch (InterruptedException e) {
+								debug.Debug.println(e.toString(), debug.Debug.ERROR);
+							}
+							for (int i = spectator.length-2; i >= 0; i--) {
+								spectator[i+1] = spectator[i];
+							}
+							spectator[0] = sl;
+							sema.release();
+							return;
+						}
+					}
 					if(!sl.trusty){
 						printExternal("/ANot-Trusty connection:");
 						printExternal("/AIP "+sc.getLocalAddress().getHostAddress()+" TERMINATED!");
 						return;
 					}
-					
+					debug.Debug.println("abc");
 					try {
 						sema.acquire();
 					} catch (InterruptedException e) {
 						debug.Debug.println(e.toString(), debug.Debug.ERROR);
 					}
+					debug.Debug.println("cde");
 					if(sl.internal){
 						if(internal!= null)
 							internal.terminate();
@@ -230,6 +273,7 @@ public class Communication {
 		if(sl.internal) s += "_INT";
 		else s += "_EXT";
 		if(sl.trusty) s += "_TRUSTY";
+		else if(sl.spectator) s+="_SPEC";
 		else s += "_NOTTRUSTY";
 		if(sl.isRunning()) s += "_O";
 		else s += "_X";
@@ -238,13 +282,13 @@ public class Communication {
 	}
 	
 	public void check(){
-		try {
-			sema.acquire();
-		} catch (InterruptedException e) {
-			debug.Debug.println(e.toString(), debug.Debug.ERROR);
-		}
 		
 		if(main.RoverServer.systemTime()-connInfoUpdt >timeToSendInfo){
+			try {
+				sema.acquire();
+			} catch (InterruptedException e) {
+				debug.Debug.println(e.toString(), debug.Debug.ERROR);
+			}
 			connInfoUpdt = main.RoverServer.systemTime();
 			
 			String s = "*COI_";
@@ -252,10 +296,17 @@ public class Communication {
 			for (int i = 0; i < connectionInfo.length; i++) {
 				s+="_"+connectionInfo[i];
 			}
+			sema.release();
 			printExternal(s);
 		}
-		
-		sema.release();
+	}
+	
+	public void initSpectators(boolean on){
+		if(on){
+			spectator = new SoketLinker[numberOfSpec];
+		}else{
+			spectator = null;
+		}
 	}
 	
 }

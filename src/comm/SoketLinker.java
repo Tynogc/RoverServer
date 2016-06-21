@@ -23,6 +23,7 @@ public class SoketLinker {
 	
 	public boolean trusty;
 	public boolean internal;
+	public boolean spectator;
 	
 	public String socketIp;
 	
@@ -84,9 +85,16 @@ public class SoketLinker {
 		debug.Debug.println("   "+fps);
 		if(fps.compareTo(fp)==0){
 			trusty = true;
+			spectator = false;
 			writer.println("TRUSTY");
 			debug.Debug.println("   Trusty true");
+		}else if(fps.compareToIgnoreCase("Spectator")==0){
+			trusty = false;
+			spectator = true;
+			scanner.close();
+			writer.println("SPECTATOR!");
 		}else{
+			spectator = false;
 			trusty = false;
 			writer.println("Response_dosn't_match!");
 			debug.Debug.println("   Trusty FALSE", debug.Debug.WARN);
@@ -97,8 +105,10 @@ public class SoketLinker {
 		Thread th = new Thread(){
 			@Override
 			public void run() {
-				read();
-				rover.RoverControle.rover.ssk.externInterupt = true;
+				if(!spectator){
+					read();
+					rover.RoverControle.rover.ssk.externInterupt = true;
+				}
 				debug.Debug.println("* Reader Thread terminated on: "+socketIp, debug.Debug.ERROR);
 			}
 		};

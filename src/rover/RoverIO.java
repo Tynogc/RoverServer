@@ -7,7 +7,7 @@ public class RoverIO {
 	private boolean[] input;
 	private int[] adc;
 	private static final int inputLenght = 100;
-	private static final int adcLenght = 100;
+	private static final int adcLenght = 40;
 	
 	public static final int PIN_SSK_MAIN = 10;
 	public static final int PIN_SSK_RESTART = 14;
@@ -16,6 +16,8 @@ public class RoverIO {
 	private Semaphore sema;
 	
 	public static RoverIO roverIO;
+	
+	private int sendIO = -1;
 	
 	public RoverIO(){
 		sema = new Semaphore(1);
@@ -82,6 +84,30 @@ public class RoverIO {
 			return;
 		}
 		adc[pos] = value;
+	}
+	
+	public void sendIOs(){
+		sendIO = 0;
+	}
+	
+	public void check(){
+		if(sendIO<0 || sendIO >= inputLenght+adcLenght){
+			return;
+		}
+		if(sendIO<inputLenght){
+			String s = "*RIO_"+sendIO+"_";
+			int i = sendIO;
+			for (; i < sendIO+30; i++) {
+				if(i>=inputLenght)break;
+				if(input[i]){
+					s+='t';
+				}else{
+					s+='f';
+				}
+			}
+			sendIO = i;
+			comm.Communication.com.printExternal(s);
+		}
 	}
 
 }
