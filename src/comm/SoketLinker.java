@@ -90,6 +90,8 @@ public class SoketLinker {
 			trusty = false;
 			writer.println("Response_dosn't_match!");
 			debug.Debug.println("   Trusty FALSE", debug.Debug.WARN);
+			threadIsRunning = false;
+			return;
 		}
 		
 		Thread th = new Thread(){
