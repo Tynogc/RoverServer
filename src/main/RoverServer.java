@@ -25,7 +25,7 @@ public class RoverServer extends Thread{
 	public RoverServer(){
 		DebugFrame db = new DebugFrame();
 		db.setTitle("Rover-Server");
-		//db.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		db.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		debug.Debug.bootMsg("* DebugFrame Started!", 0);
 		rover = new rover.RoverControle();
 		com = new comm.Communication();
@@ -59,6 +59,7 @@ public class RoverServer extends Thread{
 			}
 		}
 		debug.Debug.println("* FATAL: MainThread terminated!", debug.Debug.FATAL);
+		//TODO send stop to Linker
 		try {
 			sleep(10000);//TODO weniger!
 		} catch (InterruptedException e) {
@@ -84,4 +85,5 @@ public class RoverServer extends Thread{
 	public static boolean sendTelemetry(){
 		return sendTelem&&sendTelemNow;
 	}
+	
 }
