@@ -2,10 +2,6 @@ package debug;
 
 public class DebugComand {
 	
-	private static boolean game;
-	private static boolean system;
-	private static boolean debug;
-	
 	private static boolean printDevidedCom = true;
 	
 	private static String st;
@@ -166,6 +162,8 @@ public class DebugComand {
 		if(s[1][0].compareToIgnoreCase("stop")== 0){
 			Debug.println("* Do you want to stop the Programm? [y/N]", Debug.COM);
 			if(question(false, d)){
+				main.ExitThread.restart = false;
+				main.ExitThread.shutDownCause = main.ExitThread.SHDN_NORMAL;
 				System.exit(0);
 			}
 			return;
